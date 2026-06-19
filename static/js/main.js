@@ -6,6 +6,7 @@ let selectedRelease = null;
 const btnRefresh = document.getElementById('btn-refresh');
 const spinnerIcon = document.getElementById('spinner-icon');
 const btnRefreshText = document.getElementById('btn-refresh-text');
+const btnExportCSV = document.getElementById('btn-export-csv');
 const entriesList = document.getElementById('entries-list');
 const entriesCount = document.getElementById('entries-count');
 const errorContainer = document.getElementById('error-container');
@@ -121,6 +122,68 @@ function selectRelease(release) {
     document.querySelector('.detail-body-wrapper').scrollTop = 0;
 }
 
+// Copy Release Content to Clipboard
+function copyToClipboard(release, btnElement, event) {
+    if (event) {
+        event.stopPropagation(); // Prevent card selection click trigger
+    }
+    
+    const plainContent = stripHtml(release.content).trim();
+    const clipboardText = `BigQuery Update: ${release.title}\nSource: ${release.link}\n\n${plainContent}`;
+    
+    navigator.clipboard.writeText(clipboardText).then(() => {
+        // Change icon to checkmark for feedback
+        const originalIconHtml = btnElement.innerHTML;
+        btnElement.innerHTML = '<i class="fa-solid fa-check"></i>';
+        btnElement.classList.add('copied');
+        
+        setTimeout(() => {
+            btnElement.innerHTML = originalIconHtml;
+            btnElement.classList.remove('copied');
+        }, 2000);
+    }).catch(err => {
+        console.error('Could not copy text: ', err);
+    });
+}
+
+// Export Releases List to CSV format
+function exportToCSV() {
+    if (releases.length === 0) {
+        alert("No release data available to export.");
+        return;
+    }
+    
+    // Header columns
+    const headers = ["Title/Date", "Published ISO", "Source Link", "Description"];
+    
+    // Construct CSV Rows
+    const csvRows = [headers.join(",")];
+    
+    releases.forEach(release => {
+        const plainContent = stripHtml(release.content).replace(/"/g, '""').trim();
+        const row = [
+            `"${release.title.replace(/"/g, '""')}"`,
+            `"${release.updated.replace(/"/g, '""')}"`,
+            `"${release.link.replace(/"/g, '""')}"`,
+            `"${plainContent}"`
+        ];
+        csvRows.push(row.join(","));
+    });
+    
+    // Build Blob and trigger download
+    const csvContent = "\uFEFF" + csvRows.join("\n"); // Include BOM for proper Excel encoding
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    
+    link.setAttribute("href", url);
+    link.setAttribute("download", `bigquery_release_notes_${new Date().toISOString().slice(0,10)}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
 // Render the sidebar list
 function renderSidebar() {
     entriesList.innerHTML = '';
@@ -144,7 +207,14 @@ function renderSidebar() {
             <div class="feed-card-date">${release.title}</div>
             <div class="feed-card-title">BigQuery Update</div>
             <div class="feed-card-snippet">${snippet || 'Select to read this release description.'}</div>
+            <button class="btn-card-copy" title="Copy to clipboard">
+                <i class="fa-regular fa-copy"></i>
+            </button>
         `;
+        
+        // Setup copy button click
+        const copyBtn = card.querySelector('.btn-card-copy');
+        copyBtn.addEventListener('click', (e) => copyToClipboard(release, copyBtn, e));
         
         card.addEventListener('click', () => selectRelease(release));
         entriesList.appendChild(card);
@@ -180,6 +250,7 @@ function tweetRelease() {
 
 // Event Listeners
 btnRefresh.addEventListener('click', fetchReleases);
+btnExportCSV.addEventListener('click', exportToCSV);
 btnTweetThis.addEventListener('click', tweetRelease);
 btnCloseError.addEventListener('click', () => errorContainer.classList.add('hidden'));
 

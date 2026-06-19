@@ -300,10 +300,12 @@ h1#app-title {
 
 /* Feed item list card */
 .feed-card {
+    position: relative;
     background: rgba(255, 255, 255, 0.02);
     border: 1px solid transparent;
     border-radius: var(--border-radius-md);
     padding: 1.1rem;
+    padding-right: 2.5rem;
     cursor: pointer;
     transition: var(--transition-smooth);
     display: flex;
@@ -316,6 +318,44 @@ h1#app-title {
     background: rgba(255, 255, 255, 0.05);
     border-color: rgba(255, 255, 255, 0.08);
     transform: translateX(2px);
+}
+
+.btn-card-copy {
+    position: absolute;
+    top: 1rem;
+    right: 0.8rem;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--panel-border);
+    color: var(--text-secondary);
+    border-radius: var(--border-radius-sm);
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+    opacity: 0;
+    font-size: 0.8rem;
+    z-index: 5;
+}
+
+.feed-card:hover .btn-card-copy {
+    opacity: 1;
+}
+
+.btn-card-copy:hover {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+    transform: scale(1.05);
+}
+
+.btn-card-copy.copied {
+    background: #10b981; /* green */
+    color: white;
+    border-color: #10b981;
+    opacity: 1 !important;
 }
 
 .feed-card.active {
