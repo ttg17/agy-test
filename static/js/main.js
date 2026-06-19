@@ -1,6 +1,8 @@
 // State Management
 let releases = [];
+let filteredReleases = [];
 let selectedRelease = null;
+let searchFilter = "";
 
 // DOM Elements
 const btnRefresh = document.getElementById('btn-refresh');
@@ -12,6 +14,8 @@ const entriesCount = document.getElementById('entries-count');
 const errorContainer = document.getElementById('error-container');
 const errorMessage = document.getElementById('error-message');
 const btnCloseError = document.getElementById('btn-close-error');
+const inputSearch = document.getElementById('input-search');
+const toastContainer = document.getElementById('toast-container');
 
 const detailEmptyState = document.getElementById('detail-empty-state');
 const detailContentArea = document.getElementById('detail-content-area');
@@ -29,13 +33,46 @@ function stripHtml(htmlString) {
     return tempDiv.textContent || tempDiv.innerText || "";
 }
 
+// Show Toast Alert Notifications
+function showToast(message) {
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.innerHTML = `
+        <i class="fa-solid fa-circle-check toast-icon-success"></i>
+        <span>${message}</span>
+    `;
+    toastContainer.appendChild(toast);
+    
+    // Automatically fade out and remove toast after 3 seconds
+    setTimeout(() => {
+        toast.remove();
+    }, 3000);
+}
+
+// Render Custom Loading Skeletons
+function showLoadingSkeletons() {
+    entriesList.innerHTML = '';
+    for (let i = 0; i < 4; i++) {
+        const skeletonCard = document.createElement('div');
+        skeletonCard.className = 'skeleton-card';
+        skeletonCard.innerHTML = `
+            <div class="skeleton-pulse skeleton-date"></div>
+            <div class="skeleton-pulse skeleton-title"></div>
+            <div class="skeleton-pulse skeleton-text"></div>
+            <div class="skeleton-pulse skeleton-text-short"></div>
+        `;
+        entriesList.appendChild(skeletonCard);
+    }
+}
+
 // Fetch and load data
 async function fetchReleases() {
-    // Show spinner and disable button
+    // Show spinner and skeleton placeholders
     spinnerIcon.classList.add('spin');
     btnRefresh.disabled = true;
     btnRefreshText.textContent = "Fetching...";
     errorContainer.classList.add('hidden');
+    showLoadingSkeletons();
     
     try {
         const response = await fetch('/api/releases');
@@ -49,11 +86,12 @@ async function fetchReleases() {
         }
         
         releases = result.data || [];
+        filteredReleases = [...releases];
         renderSidebar();
         
         // Auto-select the first release if available
-        if (releases.length > 0) {
-            selectRelease(releases[0]);
+        if (filteredReleases.length > 0) {
+            selectRelease(filteredReleases[0]);
         } else {
             showEmptyState();
         }
@@ -62,7 +100,6 @@ async function fetchReleases() {
         errorMessage.textContent = `Failed to fetch release notes: ${error.message}`;
         errorContainer.classList.remove('hidden');
         
-        // If we have no cached/loaded releases, show empty state
         if (releases.length === 0) {
             showEmptyState();
         }
@@ -132,10 +169,13 @@ function copyToClipboard(release, btnElement, event) {
     const clipboardText = `BigQuery Update: ${release.title}\nSource: ${release.link}\n\n${plainContent}`;
     
     navigator.clipboard.writeText(clipboardText).then(() => {
-        // Change icon to checkmark for feedback
+        // Local card button check feedback
         const originalIconHtml = btnElement.innerHTML;
         btnElement.innerHTML = '<i class="fa-solid fa-check"></i>';
         btnElement.classList.add('copied');
+        
+        // Show global toast alert notification
+        showToast(`Copied the ${release.title} update to clipboard!`);
         
         setTimeout(() => {
             btnElement.innerHTML = originalIconHtml;
@@ -143,6 +183,7 @@ function copyToClipboard(release, btnElement, event) {
         }, 2000);
     }).catch(err => {
         console.error('Could not copy text: ', err);
+        alert("Clipboard copying failed.");
     });
 }
 
@@ -153,10 +194,7 @@ function exportToCSV() {
         return;
     }
     
-    // Header columns
     const headers = ["Title/Date", "Published ISO", "Source Link", "Description"];
-    
-    // Construct CSV Rows
     const csvRows = [headers.join(",")];
     
     releases.forEach(release => {
@@ -170,8 +208,7 @@ function exportToCSV() {
         csvRows.push(row.join(","));
     });
     
-    // Build Blob and trigger download
-    const csvContent = "\uFEFF" + csvRows.join("\n"); // Include BOM for proper Excel encoding
+    const csvContent = "\uFEFF" + csvRows.join("\n"); 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -182,24 +219,41 @@ function exportToCSV() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    
+    showToast("Successfully exported release logs to CSV!");
 }
 
 // Render the sidebar list
 function renderSidebar() {
     entriesList.innerHTML = '';
-    entriesCount.textContent = `${releases.length} updates`;
     
-    if (releases.length === 0) {
-        entriesList.innerHTML = '<div class="loading-placeholder"><p>No updates found.</p></div>';
+    // Filter based on search query
+    filteredReleases = releases.filter(release => {
+        const titleMatch = release.title.toLowerCase().includes(searchFilter.toLowerCase());
+        const contentMatch = stripHtml(release.content).toLowerCase().includes(searchFilter.toLowerCase());
+        return titleMatch || contentMatch;
+    });
+    
+    entriesCount.textContent = `${filteredReleases.length} updates`;
+    
+    if (filteredReleases.length === 0) {
+        entriesList.innerHTML = `
+            <div class="search-empty-state">
+                <i class="fa-solid fa-magnifying-glass-minus"></i>
+                <p>No matching updates found for "${searchFilter}"</p>
+            </div>
+        `;
         return;
     }
     
-    releases.forEach((release) => {
+    filteredReleases.forEach((release) => {
         const card = document.createElement('div');
         card.className = 'feed-card';
         card.dataset.id = release.link;
+        if (selectedRelease && selectedRelease.link === release.link) {
+            card.classList.add('active');
+        }
         
-        // Strip html to get plain text snippet
         const plainText = stripHtml(release.content);
         const snippet = plainText.length > 90 ? plainText.substring(0, 90) + '...' : plainText;
         
@@ -212,7 +266,6 @@ function renderSidebar() {
             </button>
         `;
         
-        // Setup copy button click
         const copyBtn = card.querySelector('.btn-card-copy');
         copyBtn.addEventListener('click', (e) => copyToClipboard(release, copyBtn, e));
         
@@ -226,10 +279,8 @@ function tweetRelease() {
     if (!selectedRelease) return;
     
     const plainContent = stripHtml(selectedRelease.content);
-    // Build a neat tweet text
     let tweetText = `BigQuery Update (${selectedRelease.title}):\n`;
     
-    // Take a snippet of the text to stay within character limits
     const textLimit = 180;
     let snippet = plainContent.trim().replace(/\s+/g, ' ');
     if (snippet.length > textLimit) {
@@ -240,19 +291,50 @@ function tweetRelease() {
     tweetText += `Read more details here:`;
     
     const tweetUrl = selectedRelease.link || 'https://cloud.google.com/bigquery';
-    
-    // Encode components
     const finalUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}&url=${encodeURIComponent(tweetUrl)}`;
     
-    // Open X Web Intent
     window.open(finalUrl, '_blank', 'width=550,height=420');
 }
+
+// Keyboard Navigation Handler (ArrowUp / ArrowDown)
+window.addEventListener('keydown', (e) => {
+    if (filteredReleases.length === 0) return;
+    
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        e.preventDefault(); // Stop normal viewport browser scrolling
+        
+        let currentIndex = filteredReleases.findIndex(r => r.link === selectedRelease?.link);
+        
+        if (e.key === 'ArrowDown') {
+            currentIndex = (currentIndex + 1 < filteredReleases.length) ? currentIndex + 1 : currentIndex;
+        } else {
+            currentIndex = (currentIndex - 1 >= 0) ? currentIndex - 1 : currentIndex;
+        }
+        
+        const targetRelease = filteredReleases[currentIndex];
+        if (targetRelease) {
+            selectRelease(targetRelease);
+            
+            // Auto scroll sidebar card element into visible container context
+            const activeCard = entriesList.querySelector(`[data-id="${targetRelease.link}"]`);
+            if (activeCard) {
+                activeCard.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+            }
+        }
+    }
+});
 
 // Event Listeners
 btnRefresh.addEventListener('click', fetchReleases);
 btnExportCSV.addEventListener('click', exportToCSV);
 btnTweetThis.addEventListener('click', tweetRelease);
 btnCloseError.addEventListener('click', () => errorContainer.classList.add('hidden'));
+
+// Search input listener
+inputSearch.addEventListener('input', (e) => {
+    searchFilter = e.target.value;
+    renderSidebar();
+});
 
 // Theme Toggle Switcher Logic
 const checkboxTheme = document.getElementById('checkbox-theme');

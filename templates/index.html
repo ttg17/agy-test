@@ -64,6 +64,10 @@
                     <h2>Updates List</h2>
                     <span id="entries-count" class="badge">0 updates</span>
                 </div>
+                <div class="search-box-wrapper">
+                    <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                    <input type="text" id="input-search" placeholder="Filter release notes..." aria-label="Search release notes" />
+                </div>
                 <div id="entries-list" class="entries-list">
                     <!-- Dynamic updates loaded via JS -->
                     <div class="loading-placeholder">
@@ -117,6 +121,9 @@
             <p>&copy; 2026 BigQuery Release Notes Dashboard. Built with Python Flask &amp; CSS Grid.</p>
         </div>
     </footer>
+
+    <!-- Toast notifications stack -->
+    <div id="toast-container" class="toast-container"></div>
 
     <!-- Custom JS -->
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
