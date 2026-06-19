@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="A premium, live dashboard showing the latest Google Cloud BigQuery Release Notes with direct Tweeting capabilities.">
+    <title>BigQuery Release Notes Dashboard</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="glow-bg"></div>
+    
+    <header class="app-header">
+        <div class="container header-container">
+            <div class="logo-area">
+                <div class="bq-logo-icon">
+                    <i class="fa-solid fa-database"></i>
+                </div>
+                <div>
+                    <h1 id="app-title">BigQuery Release Notes</h1>
+                    <p class="subtitle">Stay updated with the latest Google Cloud BigQuery developments</p>
+                </div>
+            </div>
+            
+            <div class="actions-area">
+                <button id="btn-refresh" class="btn btn-primary" title="Refresh release notes">
+                    <span id="spinner-icon" class="spinner-icon"><i class="fa-solid fa-arrows-rotate"></i></span>
+                    <span id="btn-refresh-text">Refresh Feed</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="container main-content">
+        <!-- Error alert message container -->
+        <div id="error-container" class="error-banner hidden">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+            <span id="error-message">Failed to load release notes. Please try again.</span>
+            <button id="btn-close-error" class="btn-close">&times;</button>
+        </div>
+
+        <div class="dashboard-layout">
+            <!-- Sidebar for list of release note entries -->
+            <section class="feed-sidebar-panel" aria-label="Release entries list">
+                <div class="panel-header">
+                    <h2>Updates List</h2>
+                    <span id="entries-count" class="badge">0 updates</span>
+                </div>
+                <div id="entries-list" class="entries-list">
+                    <!-- Dynamic updates loaded via JS -->
+                    <div class="loading-placeholder">
+                        <div class="pulse-line line-short"></div>
+                        <div class="pulse-line"></div>
+                        <div class="pulse-line line-medium"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Main view panel for detail of selected entry -->
+            <section class="feed-detail-panel" aria-label="Selected update details">
+                <div id="detail-empty-state" class="detail-empty-state">
+                    <div class="empty-icon-wrapper">
+                        <i class="fa-solid fa-book-open-reader"></i>
+                    </div>
+                    <h3>Select a Release Note</h3>
+                    <p>Choose an update from the left sidebar list to inspect the details, view full logs, and share on Twitter.</p>
+                </div>
+
+                <div id="detail-content-area" class="detail-content-area hidden">
+                    <div class="detail-header">
+                        <div class="detail-meta">
+                            <span id="detail-date" class="detail-date">June 17, 2026</span>
+                            <span id="detail-updated-raw" class="detail-updated-raw"></span>
+                        </div>
+                        <h2 id="detail-title">Release Title</h2>
+                        <div class="detail-action-bar">
+                            <a id="btn-original-link" href="#" target="_blank" rel="noopener noreferrer" class="btn btn-secondary">
+                                <i class="fa-solid fa-arrow-up-right-from-square"></i> Original Docs
+                            </a>
+                            <button id="btn-tweet-this" class="btn btn-tweet">
+                                <i class="fa-brands fa-x-twitter"></i> Tweet Update
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="detail-body-wrapper">
+                        <!-- Custom content block that will get the HTML content -->
+                        <div id="detail-html-content" class="detail-html-content">
+                            <!-- Rendered HTML goes here -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <footer class="app-footer">
+        <div class="container footer-container">
+            <p>&copy; 2026 BigQuery Release Notes Dashboard. Built with Python Flask &amp; CSS Grid.</p>
+        </div>
+    </footer>
+
+    <!-- Custom JS -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
