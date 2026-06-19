@@ -29,7 +29,15 @@
                 </div>
             </div>
             
-            <div class="actions-area" style="display: flex; gap: 0.8rem;">
+            <div class="actions-area" style="display: flex; gap: 1.2rem; align-items: center;">
+                <div class="theme-switch-wrapper">
+                    <i class="fa-solid fa-moon" style="opacity: 0.6;"></i>
+                    <label class="theme-switch" for="checkbox-theme">
+                        <input type="checkbox" id="checkbox-theme" aria-label="Toggle theme mode" />
+                        <div class="slider round"></div>
+                    </label>
+                    <i class="fa-solid fa-sun" style="opacity: 0.6;"></i>
+                </div>
                 <button id="btn-export-csv" class="btn btn-secondary" title="Export releases to CSV">
                     <i class="fa-solid fa-file-csv"></i> Export CSV
                 </button>

@@ -254,7 +254,25 @@ btnExportCSV.addEventListener('click', exportToCSV);
 btnTweetThis.addEventListener('click', tweetRelease);
 btnCloseError.addEventListener('click', () => errorContainer.classList.add('hidden'));
 
+// Theme Toggle Switcher Logic
+const checkboxTheme = document.getElementById('checkbox-theme');
+checkboxTheme.addEventListener('change', (e) => {
+    if (e.target.checked) {
+        document.body.classList.add('light-theme');
+        localStorage.setItem('theme', 'light');
+    } else {
+        document.body.classList.remove('light-theme');
+        localStorage.setItem('theme', 'dark');
+    }
+});
+
 // Initialize app load
 document.addEventListener('DOMContentLoaded', () => {
+    // Load local storage theme configuration
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    if (savedTheme === 'light') {
+        checkboxTheme.checked = true;
+        document.body.classList.add('light-theme');
+    }
     fetchReleases();
 });
